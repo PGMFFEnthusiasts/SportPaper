@@ -45,17 +45,17 @@ index 1baa08a1..2d299147 100644
          this.locX = (double) Math.round(this.locX * 32.0D) / 32.0D;
          this.locY = (double) Math.round(this.locY * 32.0D) / 32.0D;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3e5332f9..96a88b83 100644
+index 3e5332f9..5197ad03 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -1107,6 +1107,7 @@ public abstract class World implements IBlockAccess {
-                 this.everyoneSleeping();
-             }
+@@ -1109,6 +1109,7 @@ public abstract class World implements IBlockAccess {
  
-+            if (entity instanceof EntityProjectile) while (((EntityProjectile) entity).toCompensate-- > 0 && !entity.dead && !((EntityProjectile) entity).inGround) entity.t_();
              this.getChunkAt(i, j).a(entity);
              this.entityList.add(entity);
++            if (entity instanceof EntityProjectile) while (((EntityProjectile) entity).toCompensate-- > 0 && !entity.dead && !((EntityProjectile) entity).inGround) entity.t_();
              this.a(entity);
+             return true;
+         }
 -- 
 2.39.3 (Apple Git-146)
 
