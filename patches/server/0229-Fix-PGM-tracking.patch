@@ -1,0 +1,61 @@
+From d4831d2fa57046ca9654c12b216507e940203d94 Mon Sep 17 00:00:00 2001
+From: Tom Brady <tombrady@localhost>
+Date: Mon, 7 Jul 2025 20:34:58 -0600
+Subject: [PATCH] Fix PGM tracking
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index 1baa08a1..2d299147 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -17,6 +17,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+     public String shooterName;
+     private int i;
+     private int ar;
++    public int toCompensate;
+ 
+     public EntityProjectile(World world) {
+         super(world);
+@@ -41,6 +42,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
+         this.motY = (double) (-MathHelper.sin((this.pitch + this.l()) / 180.0F * 3.1415927F) * f);
+         this.shoot(this.motX, this.motY, this.motZ, this.j(), 1.0F);
++        if (this.shooter instanceof EntityPlayer && ((EntityPlayer) this.shooter).pingMin != Integer.MAX_VALUE) toCompensate = (int) Math.min(Math.floor((double) ((EntityPlayer) this.shooter).ping / 50), 4);
+     }
+ 
+     public EntityProjectile(World world, double d0, double d1, double d2) {
+@@ -79,19 +81,6 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         this.lastPitch = this.pitch = (float) (MathHelper.b(d1, (double) f3) * 180.0D / 3.1415927410125732D);
+         this.i = 0;
+ 
+-        // SportPaper - Lag-compensated projectiles
+-        if (this.shooter instanceof EntityPlayer && ((EntityPlayer) this.shooter).pingMin != Integer.MAX_VALUE) {
+-            EntityPlayer player = (EntityPlayer) shooter;
+-            int ticks = (int) Math.min(Math.floor((double) player.ping / 50), 4);
+-            for (int i = 0; i < ticks; i++) {
+-                this.t_();
+-                if (this.dead || this.inGround) {
+-                    break;
+-                }
+-            }
+-        }
+-        // SportPaper end
+-
+         // SportPaper start - Clamp position and velocity
+         this.locX = (double) Math.round(this.locX * 32.0D) / 32.0D;
+         this.locY = (double) Math.round(this.locY * 32.0D) / 32.0D;
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 3e5332f9..96a88b83 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1107,6 +1107,7 @@ public abstract class World implements IBlockAccess {
+                 this.everyoneSleeping();
+             }
+ 
++            if (entity instanceof EntityProjectile) while (((EntityProjectile) entity).toCompensate-- > 0 && !entity.dead && !((EntityProjectile) entity).inGround) entity.t_();
+             this.getChunkAt(i, j).a(entity);
+             this.entityList.add(entity);
+             this.a(entity);
+-- 
+2.39.3 (Apple Git-146)
+
