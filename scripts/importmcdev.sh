@@ -63,6 +63,7 @@ import DamageSource
 import ServerNBTManager
 import IChunkLoader
 import IEntitySelector
+import ItemFood
 
 cd "$basedir/base/Paper/PaperSpigot-Server/"
 rm -rf nms-patches applyPatches.sh makePatches.sh >/dev/null 2>&1
