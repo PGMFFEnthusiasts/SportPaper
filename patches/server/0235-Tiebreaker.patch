@@ -1,0 +1,37 @@
+From 424ae54216c52f68c987848db3a4c514f2d8af6f Mon Sep 17 00:00:00 2001
+From: Tom Brady <tombrady@localhost>
+Date: Tue, 8 Jul 2025 20:08:47 -0600
+Subject: [PATCH] Tiebreaker
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index 2d299147..bfe854d0 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -134,6 +134,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+ 
+         if (!this.world.isClientSide) {
+             Entity entity = null;
++            List<Entity> inside = new java.util.ArrayList<>();
+             List list = this.world.getEntities(this, this.getBoundingBox().a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
+             double d0 = 0.0D;
+             EntityLiving entityliving = this.getShooter();
+@@ -155,12 +156,13 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+                         }
+                     // SportPaper start - Check inside hitbox
+                     } else if (axisalignedbb.a(vec3d)) {
+-                        entity = entity1;
+-                        break;
++                        inside.add(entity1);
+                     }
+                     // SportPaper end
+                 }
+             }
++            Vec3D vec3dFinal = vec3d;
++            entity = inside.stream().min(java.util.Comparator.comparingDouble(testEntity -> vec3dFinal.distanceSquared(new Vec3D(testEntity.locX, testEntity.locY, testEntity.locZ)))).orElse(entity);
+ 
+             if (entity != null) {
+                 movingobjectposition = new MovingObjectPosition(entity);
+-- 
+2.39.3 (Apple Git-146)
+
