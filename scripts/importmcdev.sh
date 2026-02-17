@@ -47,6 +47,7 @@ import EntityTypes
 import IChunkLoader
 import IEntitySelector
 import ItemFireworks
+import ItemFood
 import ItemGoldenApple
 import ItemPotion
 import MerchantRecipeList
@@ -59,11 +60,13 @@ import PacketEncrypter
 import PacketPlayInUseEntity
 import PacketPlayOutAttachEntity
 import PacketPlayOutEntityMetadata
+import PacketPlayOutEntityTeleport
 import PacketPlayOutNamedEntitySpawn
 import PacketPlayOutPlayerInfo
 import PacketPlayOutScoreboardTeam
 import PacketPlayOutSpawnEntity
 import PacketPlayOutSpawnEntityLiving
+import PacketPlayOutUpdateHealth
 import PacketPrepender
 import PacketSplitter
 import PersistentScoreboard

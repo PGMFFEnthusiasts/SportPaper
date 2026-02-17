@@ -1,4 +1,4 @@
-From 4049c84dc595c1af36bb81cdd97cb73681d5d3d4 Mon Sep 17 00:00:00 2001
+From 37bc741329f66beb223e4dbb2f295b97ce38b47a Mon Sep 17 00:00:00 2001
 From: cswhite2000 <18whitechristop@gmail.com>
 Date: Mon, 6 Aug 2018 16:39:57 -0700
 Subject: [PATCH] Fix Decompilation errors
@@ -102,6 +102,19 @@ index c5be70f8b..62492650a 100644
 -        this.a((PacketListenerPlayOut) packetlistener);
 -    }
  }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
+index fe3002dab..ec9a077b4 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
+@@ -57,8 +57,4 @@ public class PacketPlayOutEntityTeleport implements Packet<PacketListenerPlayOut
+     public void a(PacketListenerPlayOut packetlistenerplayout) {
+         packetlistenerplayout.a(this);
+     }
+-
+-    public void a(PacketListener packetlistener) {
+-        this.a((PacketListenerPlayOut) packetlistener);
+-    }
+ }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java
 index ab4520ba2..fc5ad2911 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java
@@ -122,6 +135,19 @@ index 90606f50b..4b8eb3eed 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutScoreboardTeam.java
 @@ -109,8 +109,4 @@ public class PacketPlayOutScoreboardTeam implements Packet<PacketListenerPlayOut
+     public void a(PacketListenerPlayOut packetlistenerplayout) {
+         packetlistenerplayout.a(this);
+     }
+-
+-    public void a(PacketListener packetlistener) {
+-        this.a((PacketListenerPlayOut) packetlistener);
+-    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java b/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java
+index 1f2bce1f5..0375da8d4 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java
+@@ -31,8 +31,4 @@ public class PacketPlayOutUpdateHealth implements Packet<PacketListenerPlayOut>
      public void a(PacketListenerPlayOut packetlistenerplayout) {
          packetlistenerplayout.a(this);
      }
