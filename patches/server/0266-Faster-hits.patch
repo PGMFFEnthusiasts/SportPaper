@@ -1,0 +1,51 @@
+From 50c0f34b40be70c65f7961cd7092feb313c62e36 Mon Sep 17 00:00:00 2001
+From: imkunet <im@kunet.dev>
+Date: Wed, 18 Feb 2026 10:00:48 -0500
+Subject: [PATCH] Faster hits
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index f84f2c13e..91d210827 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -1069,7 +1069,7 @@ public abstract class EntityHuman extends EntityLiving {
+                             }
+ 
+                             if (!cancelled) {
+-                                ( (EntityPlayer) entity ).playerConnection.sendPacket( new PacketPlayOutEntityVelocity( entity ) );
++                                ((EntityPlayer) entity).playerConnection.networkManager.channel.writeAndFlush(new PacketPlayOutEntityVelocity( entity )); // SportPaper - Faster hits
+                                 entity.velocityChanged = false;
+                                 entity.motX = d0;
+                                 entity.motY = d1;
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1ffbfc11e..e1a360ff9 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -715,8 +715,10 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                             tickSection = curTime;
+                             catchupTime = 0;
+                         } else {
++                            // SportPaper start - Faster hits
++                            java.util.concurrent.locks.LockSupport.parkNanos(wait);
++                            processTasks();
+                             // SportPaper end
+-                            Thread.sleep(wait / 1000000);
+                         }
+                         curTime = System.nanoTime();
+                         wait = nextTick - curTime; // SportPaper - Tighter tick times
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 1a4fbc825..1e3cae432 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -229,7 +229,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+         // Paper start - add flush parameter
+         this.packetWrites.getAndIncrement(); // must be before using canFlush
+         boolean effectiveFlush = flushConditional == null ? this.canFlush : flushConditional;
+-        final boolean flush = effectiveFlush || packet instanceof PacketPlayOutKeepAlive || packet instanceof PacketPlayOutKickDisconnect; // no delay for certain packets
++        final boolean flush = effectiveFlush || packet instanceof PacketPlayOutKeepAlive || packet instanceof PacketPlayOutKickDisconnect || packet instanceof PacketPlayOutAnimation || packet instanceof PacketPlayOutEntityStatus || packet instanceof PacketPlayOutNamedSoundEffect || packet instanceof PacketPlayOutEntityMetadata; // no delay for certain packets // SportPaper - Faster hits
+         // Paper end - add flush parameter
+ 
+         final EnumProtocol enumprotocol = EnumProtocol.a(packet);
+-- 
+2.52.0
+

@@ -1,0 +1,54 @@
+From 557050011e37a7c93a02701e179df3346bd7f3c9 Mon Sep 17 00:00:00 2001
+From: imkunet <im@kunet.dev>
+Date: Wed, 18 Feb 2026 21:09:53 -0500
+Subject: [PATCH] Tighter tick times
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index a5b28b466..1ffbfc11e 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -683,13 +683,16 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                 // Spigot start
+                 // PaperSpigot start - Further improve tick loop
+                 Arrays.fill( recentTps, 20 );
+-                long start = System.nanoTime(), curTime, wait, tickSection = start;
++                long start = System.nanoTime(), curTime, wait, tickSection = start, nextTick = start; // SportPaper - Tighter tick times
+                 lastTick = start - TICK_TIME;
+                 // PaperSpigot end
+                 while (this.isRunning) {
+                     curTime = System.nanoTime();
+                     // PaperSpigot start - Further improve tick loop
+-                    wait = TICK_TIME - (curTime - lastTick);
++                    // SportPaper start - Tighter tick times
++                    nextTick += TICK_TIME;
++                    wait = nextTick - curTime;
++                    // SportPaper end
+                     if (wait > 0) {
+                         // SportPaper start - fix the tick loop improvements
+                         if (catchupTime < 2E6) {
+@@ -704,11 +707,19 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+                         // SportPaper end
+                     }
+                     if (wait > 0) {
+-                        if (!doSuspension()) {
++                        // SportPaper start - Tighter tick times
++                        if (doSuspension()) {
++                            curTime = System.nanoTime();
++                            nextTick = curTime;
++                            lastTick = curTime - TICK_TIME;
++                            tickSection = curTime;
++                            catchupTime = 0;
++                        } else {
++                            // SportPaper end
+                             Thread.sleep(wait / 1000000);
+                         }
+                         curTime = System.nanoTime();
+-                        wait = TICK_TIME - (curTime - lastTick);
++                        wait = nextTick - curTime; // SportPaper - Tighter tick times
+                     }
+ 
+                     catchupTime = Math.min(MAX_CATCHUP_BUFFER, catchupTime - wait);
+-- 
+2.52.0
+
