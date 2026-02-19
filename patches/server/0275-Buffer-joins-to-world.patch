@@ -1,0 +1,57 @@
+From c74046dde78d4d298942d13499d6f390f57ce1c4 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 19 Aug 2020 05:05:54 +0100
+Subject: [PATCH] Buffer joins to world
+
+This patch buffers the number of logins which will attempt to join
+the world per tick, this attempts to reduce the impact that join floods
+has on the server
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 832de2e3f..7963419dd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -227,4 +227,9 @@ public class PaperConfig
+     private static void useIoUring() {
+         useIoUring = getBoolean("settings.use-io-uring", useIoUring);
+     }
++
++    public static int maxJoinsPerTick = 4;
++    private static void maxJoinsPerTick() {
++        maxJoinsPerTick = getInt("settings.max-joins-per-tick", maxJoinsPerTick);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index 1160f45eb..f832c2eee 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -40,6 +40,11 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+     private SecretKey loginKey;
+     private EntityPlayer l;
+     public String hostname = ""; // CraftBukkit - add field
++    // SportPaper start - Buffer server joins
++    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick;
++    private static int joinAttemptsThisTick;
++    private static int currTick;
++    // SportPaper end
+ 
+     public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
+         this.g = LoginListener.EnumProtocolState.HELLO;
+@@ -56,7 +61,13 @@ public class LoginListener implements PacketLoginInListener, IUpdatePlayerListBo
+             return;
+         }
+         // Paper end
+-        if (this.g == LoginListener.EnumProtocolState.READY_TO_ACCEPT) {
++        // SportPaper start - Buffer server joins
++        if (currTick != MinecraftServer.currentTick) {
++            currTick = MinecraftServer.currentTick;
++            joinAttemptsThisTick = 0;
++        }
++        if (this.g == LoginListener.EnumProtocolState.READY_TO_ACCEPT && joinAttemptsThisTick++ < MAX_PER_TICK) {
++        // SportPaper end
+             // Paper start - prevent logins to be processed even though disconnect was called
+             if (networkManager.channel != null && networkManager.channel.isOpen()) {
+                 this.b();
+-- 
+2.52.0
+
