@@ -1,0 +1,50 @@
+From 64c1c239e5ba8cfd82c3831560b68abe9211b2e2 Mon Sep 17 00:00:00 2001
+From: imkunet <im@kunet.dev>
+Date: Sun, 1 Feb 2026 05:49:47 -0500
+Subject: [PATCH] Fix Unix domain socket support
+
+
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index e6c7e9146..1a4fbc825 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -505,7 +505,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+     public SocketAddress getRawAddress()
+     {
+         // Paper start - this can be nullable in the case of a Unix domain socket, so if it is, fake something
+-        if (this.channel.remoteAddress() == null) {
++        if (this.channel.remoteAddress() == null || !(this.channel.remoteAddress() instanceof java.net.InetSocketAddress)) {
+             return new java.net.InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0);
+         }
+         // Paper end
+diff --git a/src/main/java/net/minecraft/server/PacketStatusListener.java b/src/main/java/net/minecraft/server/PacketStatusListener.java
+index 770fd53ad..662c75682 100644
+--- a/src/main/java/net/minecraft/server/PacketStatusListener.java
++++ b/src/main/java/net/minecraft/server/PacketStatusListener.java
+@@ -39,7 +39,9 @@ public class PacketStatusListener implements PacketStatusInListener {
+             CraftIconCache icon = minecraftServer.server.getServerIcon();
+ 
+             ServerListPingEvent() {
+-                super(((InetSocketAddress) networkManager.getSocketAddress()).getAddress(), minecraftServer.getMotd(), minecraftServer.getPlayerList().getMaxPlayers());
++                // Paper start - Unix domain socket support
++                super(networkManager.getSocketAddress() instanceof InetSocketAddress ? ((InetSocketAddress) networkManager.getSocketAddress()).getAddress() : java.net.InetAddress.getLoopbackAddress(), minecraftServer.getMotd(), minecraftServer.getPlayerList().getMaxPlayers());
++                // Paper end
+             }
+ 
+             @Override
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 6c1792945..f4b1c2611 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -455,7 +455,7 @@ public abstract class PlayerList {
+         entity.protocolVersion = loginlistener.networkManager.protocolVersion;
+ 
+         Player player = entity.getBukkitEntity();
+-        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.networkManager.getRawAddress()).getAddress());
++        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, socketaddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketaddress).getAddress() : null, ((java.net.InetSocketAddress) loginlistener.networkManager.getRawAddress()).getAddress()); // Paper - Unix domain socket support
+         String s;
+ 
+         if (getProfileBans().isBanned(gameprofile) && !getProfileBans().get(gameprofile).hasExpired()) {
+-- 
+2.52.0
+
