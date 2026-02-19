@@ -1,0 +1,28 @@
+From c30e69dc3bf3e09dcf16cad7b91cbe0194129a9a Mon Sep 17 00:00:00 2001
+From: imkunet <im@kunet.dev>
+Date: Fri, 6 Jun 2025 02:28:20 -0400
+Subject: [PATCH] Add MCCoroutine compatibility
+
+
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index c5e6e39d..d392a6da 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -650,6 +650,14 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
++    /**
++     * This is provided for compatibility purposes with https://github.com/Shynixn/MCCoroutine.
++     * Have a nice day!
++     */
++    private HandlerList getEventListeners(Class<? extends Event> type) {
++        return Event.getHandlerList(type);
++    }
++
+     public Permission getPermission(String name) {
+         return permissions.get(name.toLowerCase());
+     }
+-- 
+2.52.0
+
