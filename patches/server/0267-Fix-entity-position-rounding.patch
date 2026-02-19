@@ -1,0 +1,96 @@
+From 767fc74505ca4bb0323b72357739c13ed19d88c5 Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 17:35:56 -0700
+Subject: [PATCH] Fix entity position rounding
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 97fbf0eab..cc3151bc0 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -55,9 +55,11 @@ public class EntityTrackerEntry {
+         this.b = i;
+         this.c = j;
+         this.u = flag;
+-        this.xLoc = MathHelper.floor(entity.locX * 32.0D);
+-        this.yLoc = MathHelper.floor(entity.locY * 32.0D);
+-        this.zLoc = MathHelper.floor(entity.locZ * 32.0D);
++        // SportPaper start
++        this.xLoc = (int) Math.round(entity.locX * 32.0D);
++        this.yLoc = (int) Math.round(entity.locY * 32.0D);
++        this.zLoc = (int) Math.round(entity.locZ * 32.0D);
++        // SportPaper end
+         this.yRot = MathHelper.d(entity.yaw * 256.0F / 360.0F);
+         this.xRot = MathHelper.d(entity.pitch * 256.0F / 360.0F);
+         this.i = MathHelper.d(entity.getHeadRotation() * 256.0F / 360.0F);
+@@ -118,9 +120,11 @@ public class EntityTrackerEntry {
+ 
+             if (this.tracker.vehicle == null) {
+                 ++this.v;
+-                i = MathHelper.floor(this.tracker.locX * 32.0D);
+-                j = MathHelper.floor(this.tracker.locY * 32.0D);
+-                int k = MathHelper.floor(this.tracker.locZ * 32.0D);
++                // SportPaper start
++                i = (int) Math.round(this.tracker.locX * 32.0D);
++                j = (int) Math.round(this.tracker.locY * 32.0D);
++                int k = (int) Math.round(this.tracker.locZ * 32.0D);
++                // SportPaper end
+                 int l = MathHelper.d(this.tracker.yaw * 256.0F / 360.0F);
+                 int i1 = MathHelper.d(this.tracker.pitch * 256.0F / 360.0F);
+                 int j1 = i - this.xLoc;
+@@ -231,9 +235,11 @@ public class EntityTrackerEntry {
+                     this.xRot = j;
+                 }
+ 
+-                this.xLoc = MathHelper.floor(this.tracker.locX * 32.0D);
+-                this.yLoc = MathHelper.floor(this.tracker.locY * 32.0D);
+-                this.zLoc = MathHelper.floor(this.tracker.locZ * 32.0D);
++                // SportPaper start
++                this.xLoc = (int) Math.round(this.tracker.locX * 32.0D);
++                this.yLoc = (int) Math.round(this.tracker.locY * 32.0D);
++                this.zLoc = (int) Math.round(this.tracker.locZ * 32.0D);
++                // SportPaper end
+                 this.b();
+                 this.x = true;
+             }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
+index ec9a077b4..507d8f3c8 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutEntityTeleport.java
+@@ -16,9 +16,11 @@ public class PacketPlayOutEntityTeleport implements Packet<PacketListenerPlayOut
+ 
+     public PacketPlayOutEntityTeleport(Entity entity) {
+         this.a = entity.getId();
+-        this.b = MathHelper.floor(entity.locX * 32.0D);
+-        this.c = MathHelper.floor(entity.locY * 32.0D);
+-        this.d = MathHelper.floor(entity.locZ * 32.0D);
++        // SportPaper start
++        this.b = (int) Math.round(entity.locX * 32.0D);
++        this.c = (int) Math.round(entity.locY * 32.0D);
++        this.d = (int) Math.round(entity.locZ * 32.0D);
++        // SportPaper end
+         this.e = (byte) ((int) (entity.yaw * 256.0F / 360.0F));
+         this.f = (byte) ((int) (entity.pitch * 256.0F / 360.0F));
+         this.g = entity.onGround;
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java b/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java
+index 8a6accf55..20f2d2bf9 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutSpawnEntity.java
+@@ -41,9 +41,11 @@ public class PacketPlayOutSpawnEntity implements Packet<PacketListenerPlayOut> {
+ 
+     public PacketPlayOutSpawnEntity(Entity entity, int i, int j) {
+         this.a = entity.getId();
+-        this.b = MathHelper.floor(entity.locX * 32.0D);
+-        this.c = MathHelper.floor(entity.locY * 32.0D);
+-        this.d = MathHelper.floor(entity.locZ * 32.0D);
++        // SportPaper start
++        this.b = (int) Math.round(entity.locX * 32.0D);
++        this.c = (int) Math.round(entity.locY * 32.0D);
++        this.d = (int) Math.round(entity.locZ * 32.0D);
++        // SportPaper end
+         this.h = MathHelper.d(entity.pitch * 256.0F / 360.0F);
+         this.i = MathHelper.d(entity.yaw * 256.0F / 360.0F);
+         this.j = i;
+-- 
+2.52.0
+

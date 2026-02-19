@@ -1,0 +1,109 @@
+From 7a33f561205066a28260f8e7a5cbb08503b5639e Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 17:45:21 -0700
+Subject: [PATCH] Round and spoof health metadata
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index cc3151bc0..47f8aaab7 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -281,11 +281,63 @@ public class EntityTrackerEntry {
+ 
+     }
+ 
++    // SportPaper start
++    private void broadcastMetadata(List<DataWatcher.WatchableObject> dataList) {
++        java.util.ListIterator<DataWatcher.WatchableObject> iter = dataList.listIterator();
++
++        while (iter.hasNext()) {
++            DataWatcher.WatchableObject entityData = iter.next();
++            if (entityData.a() == 6) { // spoof health to 1 or 0
++                iter.remove();
++                iter.add(new DataWatcher.WatchableObject(3, 6, (float) entityData.b() == 0F ? 0F : 1F));
++            } else if (entityData.a() == 17) { // spoof absorption to 0
++                iter.remove();
++                iter.add(new DataWatcher.WatchableObject(3, 17, 0F));
++            }
++        }
++
++        broadcast(new PacketPlayOutEntityMetadata(this.tracker.getId(), dataList));
++    }
++
++    private void sendSelfMetadata(List<DataWatcher.WatchableObject> dataList) {
++        if (!(this.tracker instanceof EntityPlayer)) return;
++        EntityPlayer player = (EntityPlayer) this.tracker;
++
++        java.util.ListIterator<DataWatcher.WatchableObject> iter = dataList.listIterator();
++        while (iter.hasNext()) {
++            DataWatcher.WatchableObject entityData = iter.next();
++            if (entityData.a() == 6) { // round health on client screen
++                iter.remove();
++                iter.add(new DataWatcher.WatchableObject(3, 6, (float) entityData.b() == 0F ? 0F : Math.max(1F, Math.round((float) entityData.b()))));
++            } else if (entityData.a() == 17) { // round absorption on client screen
++                iter.remove();
++                iter.add(new DataWatcher.WatchableObject(3, 17, (float) Math.round((float) entityData.b())));
++            }
++        }
++
++        if (!dataList.isEmpty()) {
++            player.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(this.tracker.getId(), dataList));
++        }
++    }
++    // SportPaper end
++
+     private void b() {
+         DataWatcher datawatcher = this.tracker.getDataWatcher();
+ 
+         if (datawatcher.a()) {
+-            this.broadcastIncludingSelf(new PacketPlayOutEntityMetadata(this.tracker.getId(), datawatcher, false));
++            // SportPaper start
++            if (this.tracker instanceof EntityHuman) {
++                List<DataWatcher.WatchableObject> dataList = datawatcher.b();
++                List<DataWatcher.WatchableObject> dataListCopy = new java.util.ArrayList<>(dataList.size());
++                for (DataWatcher.WatchableObject entityData : dataList) {
++                    dataListCopy.add(new DataWatcher.WatchableObject(entityData.c(), entityData.a(), entityData.b()));
++                }
++                this.broadcastMetadata(dataList);
++                this.sendSelfMetadata(dataListCopy);
++            } else {
++                this.broadcast(new PacketPlayOutEntityMetadata(this.tracker.getId(), datawatcher, false));
++            }
++            // SportPaper end
+         }
+ 
+         if (this.tracker instanceof EntityLiving) {
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutEntityMetadata.java b/src/main/java/net/minecraft/server/PacketPlayOutEntityMetadata.java
+index 043ce6626..085f99896 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutEntityMetadata.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutEntityMetadata.java
+@@ -20,6 +20,13 @@ public class PacketPlayOutEntityMetadata implements Packet<PacketListenerPlayOut
+ 
+     }
+ 
++    // SportPaper start
++    public PacketPlayOutEntityMetadata(int i, List<DataWatcher.WatchableObject> list) {
++        this.a = i;
++        this.b = list;
++    }
++    // SportPaper end
++
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+         this.a = packetdataserializer.e();
+         this.b = DataWatcher.b(packetdataserializer);
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java b/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java
+index 0375da8d4..139230e02 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutUpdateHealth.java
+@@ -11,7 +11,7 @@ public class PacketPlayOutUpdateHealth implements Packet<PacketListenerPlayOut>
+     public PacketPlayOutUpdateHealth() {}
+ 
+     public PacketPlayOutUpdateHealth(float f, int i, float f1) {
+-        this.a = f;
++        this.a = f == 0F ? 0F : Math.max(1F, Math.round(f)); // SportPaper
+         this.b = i;
+         this.c = f1;
+     }
+-- 
+2.52.0
+

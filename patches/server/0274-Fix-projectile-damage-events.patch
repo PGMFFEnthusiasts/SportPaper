@@ -1,0 +1,21 @@
+From 53e6cd0a4ded4ee63e0c7dd532dcf8e6b7ff1830 Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 22:54:28 -0700
+Subject: [PATCH] Fix projectile damage events
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 7474cfd2a..10442cffe 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -767,6 +767,7 @@ public abstract class EntityLiving extends Entity {
+                 if ((float) this.noDamageTicks > (float) this.maxNoDamageTicks / 2.0F) {
+                     if (f <= this.lastDamage) {
+                         this.forceExplosionKnockback = true; // CraftBukkit - SPIGOT-949 - for vanilla consistency, cooldown does not prevent explosion knockback
++                        if (damagesource instanceof EntityDamageSourceIndirect && ((EntityDamageSourceIndirect) damagesource).getProximateDamageSource() instanceof IProjectile) this.d(damagesource, 0.0F); // SportPaper - Fix projectile damage events
+                         return false;
+                     }
+ 
+-- 
+2.52.0
+

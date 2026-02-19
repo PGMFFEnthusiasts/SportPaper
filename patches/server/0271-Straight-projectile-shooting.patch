@@ -1,0 +1,33 @@
+From e3ff4c38b58ccf5defe5fe2093426fce862cfcb1 Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 20:35:47 -0700
+Subject: [PATCH] Straight projectile shooting
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index dd35ee083..d4289ee48 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -31,16 +31,16 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         this.projectileSource = (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
+         this.setSize(0.25F, 0.25F);
+         this.setPositionRotation(entityliving.locX, entityliving.locY + (double) entityliving.getHeadHeight(), entityliving.locZ, entityliving.yaw, entityliving.pitch);
+-        this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F);
++        // this.locX -= (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * 0.16F); // SportPaper - comment
+         this.locY -= 0.10000000149011612D;
+-        this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F);
++        // this.locZ -= (double) (MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * 0.16F); // SportPaper - comment
+         this.setPosition(this.locX, this.locY, this.locZ);
+         float f = 0.4F;
+ 
+         this.motX = (double) (-MathHelper.sin(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
+         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
+         this.motY = (double) (-MathHelper.sin((this.pitch + this.l()) / 180.0F * 3.1415927F) * f);
+-        this.shoot(this.motX, this.motY, this.motZ, this.j(), 1.0F);
++        this.shoot(this.motX, this.motY, this.motZ, this.j(), com.destroystokyo.paper.PaperConfig.includeRandomnessInArrowTrajectory ? 1.0F : 0); // SportPaper
+     }
+ 
+     public EntityProjectile(World world, double d0, double d1, double d2) {
+-- 
+2.52.0
+

@@ -1,0 +1,142 @@
+From 1f98b1f6c531f85e7a44acdab147e35ca068c11c Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 21:46:00 -0700
+Subject: [PATCH] Lag compensate projectiles
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 24d153887..009919c2c 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -73,6 +73,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public int viewDistance; // PaperSpigot - Player view distance API
+     private int containerUpdateDelay; // PaperSpigot
+     public int protocolVersion;//Paper
++    public int lowestPing = Integer.MAX_VALUE; // SportPaper - Lag Compensation
+ 
+     @Override
+     public boolean ad()
+diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
+index d4289ee48..29f56a5b4 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectile.java
++++ b/src/main/java/net/minecraft/server/EntityProjectile.java
+@@ -17,6 +17,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+     public String shooterName;
+     private int i;
+     private int ar;
++    public double compensationTicks; // SportPaper - Lag Compensation
+ 
+     public EntityProjectile(World world) {
+         super(world);
+@@ -41,6 +42,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         this.motZ = (double) (MathHelper.cos(this.yaw / 180.0F * 3.1415927F) * MathHelper.cos(this.pitch / 180.0F * 3.1415927F) * f);
+         this.motY = (double) (-MathHelper.sin((this.pitch + this.l()) / 180.0F * 3.1415927F) * f);
+         this.shoot(this.motX, this.motY, this.motZ, this.j(), com.destroystokyo.paper.PaperConfig.includeRandomnessInArrowTrajectory ? 1.0F : 0); // SportPaper
++        if (this.shooter instanceof EntityPlayer && ((EntityPlayer) this.shooter).lowestPing != Integer.MAX_VALUE) compensationTicks = Math.min(((EntityPlayer) this.shooter).ping / 100.0, 3.0); // SportPaper - Lag compensation
+     }
+ 
+     public EntityProjectile(World world, double d0, double d1, double d2) {
+@@ -109,12 +111,13 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+             ++this.ar;
+         }
+ 
++        double motionFactor = compensationTicks == 0 || compensationTicks > 1 ? 1 : compensationTicks; // SportPaper - Lag Compensation
+         Vec3D vec3d = new Vec3D(this.locX, this.locY, this.locZ);
+-        Vec3D vec3d1 = new Vec3D(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
++        Vec3D vec3d1 = new Vec3D(this.locX + this.motX * motionFactor, this.locY + this.motY * motionFactor, this.locZ + this.motZ * motionFactor); // SportPaper - Lag Compensation
+         MovingObjectPosition movingobjectposition = this.world.rayTrace(vec3d, vec3d1);
+ 
+         vec3d = new Vec3D(this.locX, this.locY, this.locZ);
+-        vec3d1 = new Vec3D(this.locX + this.motX, this.locY + this.motY, this.locZ + this.motZ);
++        vec3d1 = new Vec3D(this.locX + this.motX * motionFactor, this.locY + this.motY * motionFactor, this.locZ + this.motZ * motionFactor); // SportPaper - Lag Compensation
+         if (movingobjectposition != null) {
+             vec3d1 = new Vec3D(movingobjectposition.pos.a, movingobjectposition.pos.b, movingobjectposition.pos.c);
+         }
+@@ -122,7 +125,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+         if (!this.world.isClientSide) {
+             Entity entity = null;
+             List<Entity> inside = new java.util.ArrayList<>(); // SportPaper
+-            List list = this.world.getEntities(this, this.getBoundingBox().a(this.motX, this.motY, this.motZ).grow(1.0D, 1.0D, 1.0D));
++            List list = this.world.getEntities(this, this.getBoundingBox().a(this.motX * motionFactor, this.motY * motionFactor, this.motZ * motionFactor).grow(1.0D, 1.0D, 1.0D)); // SportPaper - Lag Compensation
+             double d0 = 0.0D;
+             EntityLiving entityliving = this.getShooter();
+ 
+@@ -202,9 +205,11 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+             }
+         }
+ 
+-        this.locX += this.motX;
+-        this.locY += this.motY;
+-        this.locZ += this.motZ;
++        // SportPaper start - Lag Compensation
++        this.locX += this.motX * motionFactor;
++        this.locY += this.motY * motionFactor;
++        this.locZ += this.motZ * motionFactor;
++        // SportPaper end
+         float f1 = MathHelper.sqrt(this.motX * this.motX + this.motZ * this.motZ);
+ 
+         this.yaw = (float) (MathHelper.b(this.motX, this.motZ) * 180.0D / 3.1415927410125732D);
+@@ -232,7 +237,7 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+ 
+         if (this.V()) {
+             for (int j = 0; j < 4; ++j) {
+-                float f4 = 0.25F;
++                float f4 = (float) (0.25F * motionFactor); // SportPaper - Lag Compensation
+ 
+                 this.world.addParticle(EnumParticle.WATER_BUBBLE, this.locX - this.motX * (double) f4, this.locY - this.motY * (double) f4, this.locZ - this.motZ * (double) f4, this.motX, this.motY, this.motZ, new int[0]);
+             }
+@@ -240,10 +245,13 @@ public abstract class EntityProjectile extends Entity implements IProjectile {
+             f2 = 0.8F;
+         }
+ 
+-        this.motX *= (double) f2;
+-        this.motY *= (double) f2;
+-        this.motZ *= (double) f2;
+-        this.motY -= (double) f3;
++        // SportPaper start - Lag compensation
++        double dragFactor = Math.pow(f2, motionFactor);
++        this.motX *= dragFactor;
++        this.motY *= dragFactor;
++        this.motZ *= dragFactor;
++        this.motY -= (double) f3 * motionFactor;
++        // SportPaper end
+         this.setPosition(this.locX, this.locY, this.locZ);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 4f2670003..7dd63aa07 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2082,7 +2082,7 @@ public class PlayerConnection implements PacketListenerPlayIn, IUpdatePlayerList
+         if (packetplayinkeepalive.a() == this.i) {
+             int i = (int) (this.d() - this.j);
+ 
+-            this.player.ping = (this.player.ping * 3 + i) / 4;
++            this.player.ping = this.player.ping == 0 ? i : (this.player.ping * 3 + i) / 4; // SportPaper - Update ping quicker
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d98287d6e..4e63e80b1 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1109,6 +1109,16 @@ public abstract class World implements IBlockAccess {
+ 
+             this.getChunkAt(i, j).a(entity);
+             this.entityList.add(entity);
++            // SportPaper start - Lag compensation
++            if (entity instanceof EntityProjectile) {
++                EntityProjectile projectile = (EntityProjectile) entity;
++                while (projectile.compensationTicks > 0 && !entity.dead && !projectile.inGround) {
++                    entity.t_();
++                    projectile.compensationTicks -= 1.0;
++                }
++                projectile.compensationTicks = 0;
++            }
++            // SportPaper end
+             this.a(entity);
+             return true;
+         }
+-- 
+2.52.0
+

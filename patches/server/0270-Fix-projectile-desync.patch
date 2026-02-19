@@ -1,0 +1,38 @@
+From 15a623b9a4d51d99ea7e4dc86e39f71907b2089b Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 18:48:33 -0700
+Subject: [PATCH] Fix projectile desync
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTracker.java b/src/main/java/net/minecraft/server/EntityTracker.java
+index cb72b3672..713dc874f 100644
+--- a/src/main/java/net/minecraft/server/EntityTracker.java
++++ b/src/main/java/net/minecraft/server/EntityTracker.java
+@@ -93,7 +93,10 @@ public class EntityTracker {
+         this.addEntity(entity, i, j, false);
+     }
+ 
+-    public void addEntity(Entity entity, int i, final int j, boolean flag) {
++    public void addEntity(Entity entity, int i, int j, boolean flag) {
++        // SportPaper start
++        if (IProjectile.class.isAssignableFrom(entity.getClass())) j = Integer.MAX_VALUE;
++        // SportPaper end
+         org.spigotmc.AsyncCatcher.catchOp( "entity track"); // Spigot
+         i = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, i); // Spigot
+         if (i > this.e) {
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 47f8aaab7..9e580ff29 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -114,7 +114,7 @@ public class EntityTrackerEntry {
+             this.b();
+         }
+ 
+-        if (this.m % this.c == 0 || this.tracker.ai || this.tracker.getDataWatcher().a()) {
++        if ((this.m % this.c == 0 || this.tracker.ai || this.tracker.getDataWatcher().a()) && !IProjectile.class.isAssignableFrom(this.tracker.getClass())) { // SportPaper
+             int i;
+             int j;
+ 
+-- 
+2.52.0
+

@@ -1,0 +1,49 @@
+From 01648878fe1a7896c9717af1d6e1eefaae8129de Mon Sep 17 00:00:00 2001
+From: ThatApplePieGuy <necrozma999@gmail.com>
+Date: Mon, 26 Jan 2026 22:15:09 -0700
+Subject: [PATCH] Lag compensate food
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemFood.java b/src/main/java/net/minecraft/server/ItemFood.java
+index 4a2ec5dce..a36e75782 100644
+--- a/src/main/java/net/minecraft/server/ItemFood.java
++++ b/src/main/java/net/minecraft/server/ItemFood.java
+@@ -50,7 +50,14 @@ public class ItemFood extends Item {
+ 
+     public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
+         if (entityhuman.j(this.k)) {
+-            entityhuman.a(itemstack, this.d(itemstack));
++            // SportPaper start - Lag compensation
++            if (entityhuman instanceof EntityPlayer) {
++                int compensationTicks = Math.min(6, ((EntityPlayer) entityhuman).lowestPing / 50);
++                entityhuman.a(itemstack, this.d(itemstack) - compensationTicks);
++            } else {
++                entityhuman.a(itemstack, this.d(itemstack));
++            }
++            // SportPaper end
+         }
+ 
+         return itemstack;
+diff --git a/src/main/java/net/minecraft/server/ItemPotion.java b/src/main/java/net/minecraft/server/ItemPotion.java
+index 134c13760..ce7b2bcb7 100644
+--- a/src/main/java/net/minecraft/server/ItemPotion.java
++++ b/src/main/java/net/minecraft/server/ItemPotion.java
+@@ -111,7 +111,14 @@ public class ItemPotion extends Item {
+             entityhuman.b(StatisticList.USE_ITEM_COUNT[Item.getId(this)]);
+             return itemstack;
+         } else {
+-            entityhuman.a(itemstack, this.d(itemstack));
++            // SportPaper start - Lag compensation
++            if (entityhuman instanceof EntityPlayer) {
++                int compensationTicks = Math.min(6, ((EntityPlayer) entityhuman).lowestPing / 50);
++                entityhuman.a(itemstack, this.d(itemstack) - compensationTicks);
++            } else {
++                entityhuman.a(itemstack, this.d(itemstack));
++            }
++            // SportPaper end
+             return itemstack;
+         }
+     }
+-- 
+2.52.0
+
